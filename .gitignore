@@ -9,3 +9,7 @@ coverage/
 docs/
 
 /src/generated/prisma
+
+# local-only pnpm build-script approvals; breaks pnpm 9 in CI (requires a
+# "packages" field once this file exists at all)
+pnpm-workspace.yaml
