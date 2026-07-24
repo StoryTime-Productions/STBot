@@ -1,0 +1,69 @@
+name: Bug
+description: Something is broken or behaving incorrectly.
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this when a command, notification, or scheduled job isn't working as intended.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One or two sentences describing what is wrong.
+      placeholder: "e.g. /birthday set silently fails when the date is Feb 29."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Steps to Reproduce
+      description: Numbered steps to reliably trigger the bug.
+      placeholder: |
+        1. Run /birthday set @user 02-29
+        2. Wait for the next daily check
+        3. Observe no message is posted
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behaviour
+      validations:
+        required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behaviour
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Bot Logs / Console Output
+      description: Paste any relevant logs from the host or container.
+      render: shell
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - Low — cosmetic or minor inconvenience
+        - Medium — feature partially broken, workaround exists
+        - High — feature broken, no workaround
+        - Critical — data loss or bot crash/offline
+    validations:
+      required: true
+
+  - type: textarea
+    id: related
+    attributes:
+      label: Related Issues / PRs
+      placeholder: "Refs: #N"

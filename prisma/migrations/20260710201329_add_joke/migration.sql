@@ -1,0 +1,8 @@
+-- CreateTable
+CREATE TABLE "Joke" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "text" TEXT NOT NULL,
+    "attributedTo" TEXT,
+    "loggedBy" TEXT NOT NULL,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

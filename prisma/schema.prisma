@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Birthday {
+  id        Int      @id @default(autoincrement())
+  userId    String   @unique
+  month     Int
+  day       Int
+  createdAt DateTime @default(now())
+}
+
+model Joke {
+  id           Int      @id @default(autoincrement())
+  text         String
+  attributedTo String?
+  loggedBy     String
+  mentionCount Int      @default(0)
+  createdAt    DateTime @default(now())
+}
+
+model PlaylistEntry {
+  id         Int      @id @default(autoincrement())
+  weekNumber Int
+  person     String
+  entry      String
+  updatedAt  DateTime @updatedAt
+
+  @@unique([weekNumber, person])
+}
+
+model PlaylistWeekStatus {
+  weekNumber Int    @id
+  status     String
+}
+
+model HangoutEvent {
+  id           Int      @id @default(autoincrement())
+  title        String
+  proposedBy   String
+  stage        String   @default("proposed")
+  when2meetUrl String?
+  lockedAt     String?
+  logistics    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  threadId      String?
+  pingMessageId String?
+  lastPingedAt  DateTime?
+  archived      Boolean   @default(false)
+}

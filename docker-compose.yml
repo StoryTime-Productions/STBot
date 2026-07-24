@@ -1,0 +1,17 @@
+services:
+  bot:
+    build: .
+    container_name: storytime-discord-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # Overrides whatever DATABASE_URL is in .env (that's for local dev
+      # against ./dev.db) — the container's SQLite file lives in the
+      # persisted volume below instead.
+      DATABASE_URL: file:/app/data/prod.db
+    volumes:
+      - bot_data:/app/data
+
+volumes:
+  bot_data:

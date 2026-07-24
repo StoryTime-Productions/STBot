@@ -1,0 +1,48 @@
+name: Feature Request
+description: Propose a new capability or a change to an existing one.
+title: "[Feature] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What should the bot do that it doesn't today?
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: Why does this matter — what problem does it solve for the group?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Feature Area
+      options:
+        - Birthdays
+        - Playlist tracking
+        - Hangout planning
+        - Inside jokes
+        - Game session logging
+        - st-tools integration
+        - Infra / tooling
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed Solution
+      description: If you have a specific approach in mind, describe it. Otherwise leave open for discussion.
+
+  - type: textarea
+    id: related
+    attributes:
+      label: Related Issues / PRs
+      placeholder: "Refs: #N"
