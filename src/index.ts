@@ -10,6 +10,7 @@ import { loadCommands, registerCommands } from "./lib/commands.js";
 import { announceTodaysBirthdays } from "./lib/birthdayAnnouncer.js";
 import { announcePlaylistUpdates, announceWeeklySummary } from "./lib/playlistAnnouncer.js";
 import { getCurrentWeekSummary, pollPlaylistSheet } from "./lib/playlistTracker.js";
+import { fillMissingEntries } from "./lib/playlistFrownFill.js";
 import { checkInactiveHangouts } from "./lib/hangoutInactivity.js";
 import { handleHangoutPingReaction } from "./lib/hangoutReactions.js";
 import { logger } from "./lib/logger.js";
@@ -51,6 +52,16 @@ async function main(): Promise<void> {
         .catch((error: unknown) =>
           logger.error("Playlist sheet poll failed", { error: String(error) })
         );
+    });
+
+    cron.schedule("*/30 * * * *", () => {
+      fillMissingEntries(
+        config.playlistSheetId,
+        config.googleServiceAccountKeyPath,
+        config.frownImageUrl
+      ).catch((error: unknown) =>
+        logger.error("Playlist frown-fill failed", { error: String(error) })
+      );
     });
 
     cron.schedule(

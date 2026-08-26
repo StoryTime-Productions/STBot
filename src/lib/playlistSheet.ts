@@ -4,6 +4,9 @@ export interface WeekRow {
   weekNumber: number;
   status: string;
   entries: Record<string, string>;
+  /** 0-based index of this week's row in the raw parsed CSV — needed to
+   * address a specific cell for writes (see playlistFrownFill.ts). */
+  rowIndex: number;
 }
 
 export interface ParsedSheet {
@@ -12,6 +15,31 @@ export interface ParsedSheet {
 }
 
 const WEEK_LABEL_RE = /^Week\s+(\d+)\s*\(([^)]*)\)\s*$/i;
+
+/** Converts a 0-based column index (0 = A) to its spreadsheet letter(s). */
+export function columnLetter(index: number): string {
+  let n = index + 1;
+  let letters = "";
+  while (n > 0) {
+    const remainder = (n - 1) % 26;
+    letters = String.fromCharCode(65 + remainder) + letters;
+    n = Math.floor((n - 1) / 26);
+  }
+  return letters;
+}
+
+/** A1 notation for a given week row + person column, e.g. "C5" (or
+ * "Tab!C5" if sheetTabName is given — omit it to let the Sheets API
+ * default to the first visible sheet, same tab fetchSheetCsv's plain
+ * CSV export already assumes). personIndex is the 0-based index into
+ * ParsedSheet.people; the sheet's person columns start at column B
+ * (index 1), one past the week-label column A. */
+export function getCellA1(week: WeekRow, personIndex: number, sheetTabName?: string): string {
+  const column = columnLetter(personIndex + 1);
+  const row = week.rowIndex + 1; // rows are 0-based internally, 1-based in A1 notation
+  const cell = `${column}${row}`;
+  return sheetTabName ? `${sheetTabName}!${cell}` : cell;
+}
 
 export function getSheetUrl(sheetId: string): string {
   return `https://docs.google.com/spreadsheets/d/${sheetId}/edit`;
@@ -45,7 +73,8 @@ export function parseSheet(csv: string): ParsedSheet {
     .filter((cell) => cell !== "");
 
   const weeks: WeekRow[] = [];
-  for (const row of rows.slice(firstWeekRowIndex)) {
+  for (let rowIndex = firstWeekRowIndex; rowIndex < rows.length; rowIndex++) {
+    const row = rows[rowIndex] ?? [];
     const match = WEEK_LABEL_RE.exec((row[0] ?? "").trim());
     if (!match) {
       continue;
@@ -62,7 +91,7 @@ export function parseSheet(csv: string): ParsedSheet {
       }
     });
 
-    weeks.push({ weekNumber, status, entries });
+    weeks.push({ weekNumber, status, entries, rowIndex });
   }
 
   return { people, weeks };
