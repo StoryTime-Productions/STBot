@@ -39,6 +39,14 @@ model PlaylistWeekStatus {
   status     String
 }
 
+model PlaylistFrownFill {
+  weekNumber Int
+  person     String
+  filledAt   DateTime @default(now())
+
+  @@id([weekNumber, person])
+}
+
 model HangoutEvent {
   id           Int      @id @default(autoincrement())
   title        String

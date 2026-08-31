@@ -15,7 +15,23 @@ describe("loadConfig", () => {
       guildId: "guild-123",
       announcementsChannelId: "channel-123",
       playlistSheetId: "sheet-123",
+      googleServiceAccountKeyPath: undefined,
+      frownImageUrl: "https://i.imgflip.com/39sjn7.png",
     });
+  });
+
+  it("leaves the frown-fill feature disabled (no credential) when GOOGLE_SERVICE_ACCOUNT_KEY_PATH is unset", () => {
+    expect(loadConfig(validEnv).googleServiceAccountKeyPath).toBeUndefined();
+  });
+
+  it("picks up GOOGLE_SERVICE_ACCOUNT_KEY_PATH and FROWN_IMAGE_URL when set", () => {
+    const config = loadConfig({
+      ...validEnv,
+      GOOGLE_SERVICE_ACCOUNT_KEY_PATH: "/secrets/key.json",
+      FROWN_IMAGE_URL: "https://example.com/custom-frown.png",
+    });
+    expect(config.googleServiceAccountKeyPath).toBe("/secrets/key.json");
+    expect(config.frownImageUrl).toBe("https://example.com/custom-frown.png");
   });
 
   it("throws listing every missing variable", () => {

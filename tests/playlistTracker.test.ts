@@ -25,7 +25,7 @@ describe("pollPlaylistSheet", () => {
   it("reports a new entry when none existed before, and upserts it", async () => {
     vi.mocked(parseSheet).mockReturnValueOnce({
       people: ["Alex"],
-      weeks: [{ weekNumber: 1, status: "56 h left", entries: { Alex: "Song A" } }],
+      weeks: [{ weekNumber: 1, status: "56 h left", entries: { Alex: "Song A" }, rowIndex: 0 }],
     });
     vi.mocked(db.playlistEntry.findUnique).mockResolvedValueOnce(null);
 
@@ -42,7 +42,7 @@ describe("pollPlaylistSheet", () => {
   it("does not report an entry that hasn't changed", async () => {
     vi.mocked(parseSheet).mockReturnValueOnce({
       people: ["Alex"],
-      weeks: [{ weekNumber: 1, status: "56 h left", entries: { Alex: "Song A" } }],
+      weeks: [{ weekNumber: 1, status: "56 h left", entries: { Alex: "Song A" }, rowIndex: 0 }],
     });
     vi.mocked(db.playlistEntry.findUnique).mockResolvedValueOnce({
       id: 1,
@@ -61,7 +61,7 @@ describe("pollPlaylistSheet", () => {
   it("reports a changed entry (same person/week, different text)", async () => {
     vi.mocked(parseSheet).mockReturnValueOnce({
       people: ["Alex"],
-      weeks: [{ weekNumber: 1, status: "56 h left", entries: { Alex: "Song B" } }],
+      weeks: [{ weekNumber: 1, status: "56 h left", entries: { Alex: "Song B" }, rowIndex: 0 }],
     });
     vi.mocked(db.playlistEntry.findUnique).mockResolvedValueOnce({
       id: 1,
@@ -79,7 +79,7 @@ describe("pollPlaylistSheet", () => {
   it("reports a completed week on the not-done -> DONE transition", async () => {
     vi.mocked(parseSheet).mockReturnValueOnce({
       people: ["Alex", "Sam"],
-      weeks: [{ weekNumber: 1, status: "DONE", entries: { Alex: "Song A" } }],
+      weeks: [{ weekNumber: 1, status: "DONE", entries: { Alex: "Song A" }, rowIndex: 0 }],
     });
     vi.mocked(db.playlistEntry.findUnique).mockResolvedValueOnce({
       id: 1,
@@ -103,7 +103,7 @@ describe("pollPlaylistSheet", () => {
   it("does not re-report a week that was already DONE last poll", async () => {
     vi.mocked(parseSheet).mockReturnValueOnce({
       people: ["Alex"],
-      weeks: [{ weekNumber: 1, status: "DONE", entries: { Alex: "Song A" } }],
+      weeks: [{ weekNumber: 1, status: "DONE", entries: { Alex: "Song A" }, rowIndex: 0 }],
     });
     vi.mocked(db.playlistEntry.findUnique).mockResolvedValueOnce({
       id: 1,
@@ -132,9 +132,9 @@ describe("getCurrentWeekSummary", () => {
     vi.mocked(parseSheet).mockReturnValueOnce({
       people: ["Alex", "Sam"],
       weeks: [
-        { weekNumber: 1, status: "DONE", entries: { Alex: "Song A", Sam: "Song B" } },
-        { weekNumber: 2, status: "12 h left", entries: { Alex: "Song C" } },
-        { weekNumber: 3, status: "NOT STARTED YET", entries: {} },
+        { weekNumber: 1, status: "DONE", entries: { Alex: "Song A", Sam: "Song B" }, rowIndex: 0 },
+        { weekNumber: 2, status: "12 h left", entries: { Alex: "Song C" }, rowIndex: 1 },
+        { weekNumber: 3, status: "NOT STARTED YET", entries: {}, rowIndex: 2 },
       ],
     });
 
@@ -152,7 +152,7 @@ describe("getCurrentWeekSummary", () => {
   it("returns undefined when every week is DONE", async () => {
     vi.mocked(parseSheet).mockReturnValueOnce({
       people: ["Alex"],
-      weeks: [{ weekNumber: 1, status: "DONE", entries: { Alex: "Song A" } }],
+      weeks: [{ weekNumber: 1, status: "DONE", entries: { Alex: "Song A" }, rowIndex: 0 }],
     });
 
     const summary = await getCurrentWeekSummary("sheet-1");

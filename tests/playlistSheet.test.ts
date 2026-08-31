@@ -63,6 +63,39 @@ describe("getSheetUrl", () => {
   });
 });
 
+describe("columnLetter", () => {
+  it("converts 0-based indices to spreadsheet column letters", async () => {
+    const { columnLetter } = await import("../src/lib/playlistSheet.js");
+    expect(columnLetter(0)).toBe("A");
+    expect(columnLetter(1)).toBe("B");
+    expect(columnLetter(25)).toBe("Z");
+    expect(columnLetter(26)).toBe("AA");
+    expect(columnLetter(27)).toBe("AB");
+  });
+});
+
+describe("getCellA1", () => {
+  it("addresses a person's column (offset by the week-label column) and 1-based row", async () => {
+    const { getCellA1 } = await import("../src/lib/playlistSheet.js");
+    const week = { weekNumber: 1, status: "DONE", entries: {}, rowIndex: 4 };
+    expect(getCellA1(week, 0)).toBe("B5"); // person index 0 -> column B, rowIndex 4 -> row 5
+    expect(getCellA1(week, 2)).toBe("D5");
+  });
+
+  it("prefixes a sheet tab name when given", async () => {
+    const { getCellA1 } = await import("../src/lib/playlistSheet.js");
+    const week = { weekNumber: 1, status: "DONE", entries: {}, rowIndex: 0 };
+    expect(getCellA1(week, 0, "Sheet1")).toBe("Sheet1!B1");
+  });
+});
+
+describe("parseSheet rowIndex", () => {
+  it("records each week's 0-based row index in the parsed CSV", () => {
+    const { weeks } = parseSheet(FIXTURE_CSV);
+    expect(weeks.map((w) => w.rowIndex)).toEqual([4, 5, 6]);
+  });
+});
+
 describe("fetchSheetCsv", () => {
   it("throws with the HTTP status on a non-ok response", async () => {
     vi.stubGlobal(

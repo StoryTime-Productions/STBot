@@ -27,9 +27,9 @@ describe("playlist stats command", () => {
     vi.mocked(parseSheet).mockReturnValueOnce({
       people: ["Alex", "Sam"],
       weeks: [
-        { weekNumber: 1, status: "DONE", entries: { Alex: "Song A", Sam: "Song B" } },
-        { weekNumber: 2, status: "12 h left", entries: { Alex: "Song C" } },
-        { weekNumber: 3, status: "NOT STARTED YET", entries: {} },
+        { weekNumber: 1, status: "DONE", entries: { Alex: "Song A", Sam: "Song B" }, rowIndex: 0 },
+        { weekNumber: 2, status: "12 h left", entries: { Alex: "Song C" }, rowIndex: 1 },
+        { weekNumber: 3, status: "NOT STARTED YET", entries: {}, rowIndex: 2 },
       ],
     });
 
@@ -50,7 +50,7 @@ describe("playlist stats command", () => {
   it("reports all weeks complete when nothing is in progress", async () => {
     vi.mocked(parseSheet).mockReturnValueOnce({
       people: ["Alex"],
-      weeks: [{ weekNumber: 1, status: "DONE", entries: { Alex: "Song A" } }],
+      weeks: [{ weekNumber: 1, status: "DONE", entries: { Alex: "Song A" }, rowIndex: 0 }],
     });
 
     const interaction = fakeInteraction();
