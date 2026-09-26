@@ -1,3 +1,7 @@
+# Pinned so the repo rename (storytime-discord-bot -> STBot) keeps reusing the
+# existing container and its bot_data volume.
+name: storytime-discord-bot
+
 services:
   bot:
     build: .
@@ -12,6 +16,9 @@ services:
       DATABASE_URL: file:/app/data/prod.db
     volumes:
       - bot_data:/app/data
+      # Google service-account key for frown-fill; set
+      # GOOGLE_SERVICE_ACCOUNT_KEY_PATH=/app/secrets/google-sa.json in .env.
+      - ${HOME}/stbot-secrets:/app/secrets:ro
 
 volumes:
   bot_data:
