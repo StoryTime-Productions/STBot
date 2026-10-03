@@ -17,7 +17,19 @@ describe("loadConfig", () => {
       playlistSheetId: "sheet-123",
       googleServiceAccountKeyPath: undefined,
       frownImageUrl: "https://i.imgflip.com/39sjn7.png",
+      stToolsUrl: undefined,
+      botApiSecret: undefined,
     });
+  });
+
+  it("picks up the st-tools URL (trailing slash trimmed) and secret", () => {
+    const config = loadConfig({
+      ...validEnv,
+      ST_TOOLS_URL: "https://hub.test/",
+      BOT_API_SECRET: "s3cret",
+    });
+    expect(config.stToolsUrl).toBe("https://hub.test");
+    expect(config.botApiSecret).toBe("s3cret");
   });
 
   it("leaves the frown-fill feature disabled (no credential) when GOOGLE_SERVICE_ACCOUNT_KEY_PATH is unset", () => {

@@ -11,6 +11,10 @@ export interface BotConfig {
    * every other feature must keep working without this credential. */
   googleServiceAccountKeyPath: string | undefined;
   frownImageUrl: string;
+  /** Base URL of st-tools. Both st-tools values must be set for the hub
+   * buttons, /idea and the per-minute tick; unset disables just those. */
+  stToolsUrl: string | undefined;
+  botApiSecret: string | undefined;
 }
 
 const REQUIRED_KEYS = [
@@ -33,5 +37,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): BotConfig {
     playlistSheetId: env["PLAYLIST_SHEET_ID"] as string,
     googleServiceAccountKeyPath: env["GOOGLE_SERVICE_ACCOUNT_KEY_PATH"] || undefined,
     frownImageUrl: env["FROWN_IMAGE_URL"] || DEFAULT_FROWN_IMAGE_URL,
+    stToolsUrl: env["ST_TOOLS_URL"]?.replace(/\/+$/, "") || undefined,
+    botApiSecret: env["BOT_API_SECRET"] || undefined,
   };
 }
