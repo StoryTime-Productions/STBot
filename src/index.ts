@@ -13,6 +13,8 @@ import { getCurrentWeekSummary, pollPlaylistSheet } from "./lib/playlistTracker.
 import { fillMissingEntries } from "./lib/playlistFrownFill.js";
 import { checkInactiveHangouts } from "./lib/hangoutInactivity.js";
 import { handleHangoutPingReaction } from "./lib/hangoutReactions.js";
+import { handleHangoutButton } from "./lib/hangoutButtons.js";
+import { tickStTools } from "./lib/stTools.js";
 import { logger } from "./lib/logger.js";
 import type { Command } from "./types.js";
 
@@ -76,6 +78,12 @@ async function main(): Promise<void> {
       { timezone: "America/Toronto" }
     );
 
+    cron.schedule("* * * * *", () => {
+      tickStTools(config).catch((error: unknown) =>
+        logger.error("st-tools tick failed", { error: String(error) })
+      );
+    });
+
     cron.schedule("0 11 * * *", () => {
       checkInactiveHangouts(readyClient, 14).catch((error: unknown) =>
         logger.error("Hangout inactivity check failed", { error: String(error) })
@@ -95,6 +103,13 @@ async function main(): Promise<void> {
   });
 
   client.on("interactionCreate", (interaction) => {
+    if (interaction.isButton()) {
+      handleHangoutButton(interaction, config).catch((error: unknown) =>
+        logger.error("Hangout button handling failed", { error: String(error) })
+      );
+      return;
+    }
+
     if (!interaction.isChatInputCommand()) {
       return;
     }
