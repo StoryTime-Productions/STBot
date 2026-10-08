@@ -19,9 +19,14 @@ function chat(member: unknown) {
     options: {
       getString: vi.fn((name: string) => (name === "title" ? "Board games" : null)),
     },
+    channelId: "ideas-1",
     deferReply: vi.fn().mockResolvedValue(undefined),
+    deleteReply: vi.fn().mockResolvedValue(undefined),
     editReply: vi.fn().mockResolvedValue(undefined),
-  } as unknown as ChatInputCommandInteraction & { editReply: ReturnType<typeof vi.fn> };
+  } as unknown as ChatInputCommandInteraction & {
+    editReply: ReturnType<typeof vi.fn>;
+    deleteReply: ReturnType<typeof vi.fn>;
+  };
 }
 
 afterEach(() => {
@@ -66,5 +71,22 @@ describe("idea command", () => {
       ).name
     ).toBe("Global Name");
     expect(i.editReply).toHaveBeenCalledWith(UNAVAILABLE);
+  });
+
+  it.each([
+    ["posted in this channel", { posted: true, channelId: "ideas-1" }, true],
+    ["posted in another channel", { posted: true, channelId: "other" }, false],
+    ["not posted", { posted: false, channelId: null }, false],
+  ])("%s: deletes the private reply only when it duplicates the post", async (_n, extra, drops) => {
+    for (const [k, v] of Object.entries(ENV)) vi.stubEnv(k, v);
+    const message = { embeds: [{ title: "Board games" }] };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true, message, ...extra }) })
+    );
+    const i = chat(null);
+    await command.execute(i);
+    expect(i.deleteReply).toHaveBeenCalledTimes(drops ? 1 : 0);
+    expect(i.editReply).toHaveBeenCalledTimes(drops ? 0 : 1);
   });
 });

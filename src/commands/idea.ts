@@ -1,6 +1,6 @@
 import { MessageFlags, SlashCommandBuilder } from "discord.js";
 import { loadConfig } from "../config.js";
-import { messageFromStTools } from "../lib/stTools.js";
+import { callStTools, UNAVAILABLE, type StToolsMessage } from "../lib/stTools.js";
 import type { Command } from "../types.js";
 
 const data = new SlashCommandBuilder()
@@ -17,7 +17,7 @@ export const command: Command = {
   data,
   execute: async (interaction) => {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-    const message = await messageFromStTools(loadConfig(), "ideas", {
+    const answer = (await callStTools(loadConfig(), "ideas", {
       title: interaction.options.getString("title", true),
       details: interaction.options.getString("description"),
       discordId: interaction.user.id,
@@ -25,7 +25,13 @@ export const command: Command = {
         interaction.member && "displayName" in interaction.member
           ? interaction.member.displayName
           : interaction.user.displayName,
-    });
+    })) as { message?: StToolsMessage; posted?: boolean; channelId?: string | null } | null;
+    // The public post already shows the idea; a private copy next to it is noise.
+    if (answer?.posted && answer.channelId === interaction.channelId) {
+      await interaction.deleteReply();
+      return;
+    }
+    const message = answer?.message?.embeds ? answer.message : UNAVAILABLE;
     await interaction.editReply(message as Parameters<typeof interaction.editReply>[0]);
   },
 };
