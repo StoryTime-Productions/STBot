@@ -14,6 +14,12 @@ import { fillMissingEntries } from "./lib/playlistFrownFill.js";
 import { checkInactiveHangouts } from "./lib/hangoutInactivity.js";
 import { handleHangoutPingReaction } from "./lib/hangoutReactions.js";
 import { handleHangoutButton } from "./lib/hangoutButtons.js";
+import {
+  MessageCounter,
+  handleVoiceStateUpdate,
+  handleWordleMessage,
+  sendVoiceSnapshot,
+} from "./lib/discordStats.js";
 import { tickStTools } from "./lib/stTools.js";
 import { logger } from "./lib/logger.js";
 import type { Command } from "./types.js";
@@ -24,6 +30,7 @@ async function main(): Promise<void> {
   const config = loadConfig();
   const client = createClient();
   const commands = await loadCommands(commandsDir);
+  const messageCounter = new MessageCounter();
 
   client.once("clientReady", (readyClient) => {
     logger.info("Bot logged in", { tag: readyClient.user.tag });
@@ -82,13 +89,47 @@ async function main(): Promise<void> {
       tickStTools(config).catch((error: unknown) =>
         logger.error("st-tools tick failed", { error: String(error) })
       );
+      messageCounter
+        .flush(config)
+        .catch((error: unknown) =>
+          logger.error("Message count flush failed", { error: String(error) })
+        );
     });
+
+    // Close voice sessions that ended while the bot was down and open the ones in progress.
+    const guild = readyClient.guilds.cache.get(config.guildId);
+    if (guild) {
+      sendVoiceSnapshot(guild, config).catch((error: unknown) =>
+        logger.error("Voice snapshot failed", { error: String(error) })
+      );
+    }
 
     cron.schedule("0 11 * * *", () => {
       checkInactiveHangouts(readyClient, 14).catch((error: unknown) =>
         logger.error("Hangout inactivity check failed", { error: String(error) })
       );
     });
+  });
+
+  client.on("voiceStateUpdate", (oldState, newState) => {
+    if (newState.guild.id !== config.guildId) {
+      return;
+    }
+
+    handleVoiceStateUpdate(oldState, newState, config).catch((error: unknown) =>
+      logger.error("Voice state handling failed", { error: String(error) })
+    );
+  });
+
+  client.on("messageCreate", (message) => {
+    if (message.guildId !== config.guildId) {
+      return;
+    }
+
+    messageCounter.record(message, config);
+    handleWordleMessage(message, config).catch((error: unknown) =>
+      logger.error("Wordle streak handling failed", { error: String(error) })
+    );
   });
 
   client.on("messageReactionAdd", (reaction, user) => {
@@ -130,6 +171,7 @@ async function main(): Promise<void> {
 
   const shutdown = async (signal: string): Promise<void> => {
     logger.info("Shutting down", { signal });
+    await messageCounter.flush(config).catch(() => undefined);
     client.destroy();
     await db.$disconnect();
     process.exit(0);
