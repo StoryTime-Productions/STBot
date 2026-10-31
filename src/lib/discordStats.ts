@@ -8,7 +8,7 @@ export type StatsConfig = Pick<
   | "stToolsUrl"
   | "botApiSecret"
   | "chatCategoryId"
-  | "voiceCategoryId"
+  | "voiceCategoryIds"
   | "voiceExcludedChannelIds"
   | "wordleChannelId"
 >;
@@ -44,14 +44,15 @@ interface VoiceChannelLike {
   guild: { afkChannelId: string | null };
 }
 
-/** A voice channel counts when it is in the voice category, is not the AFK channel and is not excluded. */
+/** A voice channel counts when it is in a counted voice category, is not the AFK channel and is not excluded. */
 export function isCountedVoiceChannel(
   channel: VoiceChannelLike | null,
-  config: Pick<StatsConfig, "voiceCategoryId" | "voiceExcludedChannelIds">
+  config: Pick<StatsConfig, "voiceCategoryIds" | "voiceExcludedChannelIds">
 ): boolean {
   if (!channel) return false;
   return (
-    channel.parentId === config.voiceCategoryId &&
+    channel.parentId !== null &&
+    config.voiceCategoryIds.includes(channel.parentId) &&
     channel.id !== channel.guild.afkChannelId &&
     !config.voiceExcludedChannelIds.includes(channel.id)
   );

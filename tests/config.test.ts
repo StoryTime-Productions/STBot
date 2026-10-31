@@ -20,7 +20,7 @@ describe("loadConfig", () => {
       stToolsUrl: undefined,
       botApiSecret: undefined,
       chatCategoryId: "379790880787398677",
-      voiceCategoryId: "379789398734274563",
+      voiceCategoryIds: ["379789398734274563", "843558026799742996"],
       voiceExcludedChannelIds: [],
       wordleChannelId: undefined,
     });
@@ -40,12 +40,12 @@ describe("loadConfig", () => {
     const config = loadConfig({
       ...validEnv,
       DISCORD_CHAT_CATEGORY_ID: "chat-1",
-      DISCORD_VOICE_CATEGORY_ID: "voice-1",
+      DISCORD_VOICE_CATEGORY_IDS: " voice-1, voice-2 ,",
       DISCORD_VOICE_EXCLUDED_CHANNEL_IDS: " a, b ,,c ",
       DISCORD_WORDLE_CHANNEL_ID: "wordle-1",
     });
     expect(config.chatCategoryId).toBe("chat-1");
-    expect(config.voiceCategoryId).toBe("voice-1");
+    expect(config.voiceCategoryIds).toEqual(["voice-1", "voice-2"]);
     expect(config.voiceExcludedChannelIds).toEqual(["a", "b", "c"]);
     expect(config.wordleChannelId).toBe("wordle-1");
   });
