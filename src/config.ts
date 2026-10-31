@@ -18,15 +18,16 @@ export interface BotConfig {
   /** Discord stats shown on the st-tools dashboard (need the two st-tools values above). Messages
    * count in this category and its threads; matching by category id includes channels added later. */
   chatCategoryId: string;
-  /** Voice time counts in this category, minus the guild's AFK channel and the excluded ids. */
-  voiceCategoryId: string;
+  /** Voice time counts in these categories (Socializing and Studying by default), minus the
+   * guild's AFK channel and the excluded ids. */
+  voiceCategoryIds: string[];
   voiceExcludedChannelIds: string[];
   /** The channel the Wordle app posts its daily streak in; unset matches a channel named st-wordle. */
   wordleChannelId: string | undefined;
 }
 
 const DEFAULT_CHAT_CATEGORY_ID = "379790880787398677";
-const DEFAULT_VOICE_CATEGORY_ID = "379789398734274563";
+const DEFAULT_VOICE_CATEGORY_IDS = ["379789398734274563", "843558026799742996"];
 
 const REQUIRED_KEYS = [
   "DISCORD_TOKEN",
@@ -34,6 +35,15 @@ const REQUIRED_KEYS = [
   "DISCORD_ANNOUNCEMENTS_CHANNEL_ID",
   "PLAYLIST_SHEET_ID",
 ] as const;
+
+/** A comma-separated env list, trimmed and without blanks; the fallback when it is unset or empty. */
+function listOf(value: string | undefined, fallback: string[]): string[] {
+  const ids = (value ?? "")
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+  return ids.length > 0 ? ids : fallback;
+}
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): BotConfig {
   const missing = REQUIRED_KEYS.filter((key) => !env[key]);
@@ -51,11 +61,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): BotConfig {
     stToolsUrl: env["ST_TOOLS_URL"]?.replace(/\/+$/, "") || undefined,
     botApiSecret: env["BOT_API_SECRET"] || undefined,
     chatCategoryId: env["DISCORD_CHAT_CATEGORY_ID"] || DEFAULT_CHAT_CATEGORY_ID,
-    voiceCategoryId: env["DISCORD_VOICE_CATEGORY_ID"] || DEFAULT_VOICE_CATEGORY_ID,
-    voiceExcludedChannelIds: (env["DISCORD_VOICE_EXCLUDED_CHANNEL_IDS"] ?? "")
-      .split(",")
-      .map((id) => id.trim())
-      .filter(Boolean),
+    voiceCategoryIds: listOf(env["DISCORD_VOICE_CATEGORY_IDS"], DEFAULT_VOICE_CATEGORY_IDS),
+    voiceExcludedChannelIds: listOf(env["DISCORD_VOICE_EXCLUDED_CHANNEL_IDS"], []),
     wordleChannelId: env["DISCORD_WORDLE_CHANNEL_ID"] || undefined,
   };
 }
