@@ -13,7 +13,7 @@ const config = {
   stToolsUrl: "https://hub.test",
   botApiSecret: "s3cret",
   chatCategoryId: "chat",
-  voiceCategoryId: "voice",
+  voiceCategoryIds: ["voice"],
   voiceExcludedChannelIds: [],
   wordleChannelId: undefined,
 };

@@ -20,7 +20,7 @@ const CONFIG: StatsConfig = {
   stToolsUrl: "https://hub.test",
   botApiSecret: "s3cret",
   chatCategoryId: "chat",
-  voiceCategoryId: "voice",
+  voiceCategoryIds: ["voice", "study"],
   voiceExcludedChannelIds: ["gurls"],
   wordleChannelId: undefined,
 };
@@ -119,7 +119,11 @@ describe("helpers", () => {
     expect(isCountedVoiceChannel(voiceChannel("v1", "D&D"), CONFIG)).toBe(true);
     expect(isCountedVoiceChannel(voiceChannel(AFK, "Nap Time"), CONFIG)).toBe(false);
     expect(isCountedVoiceChannel(voiceChannel("gurls", "gurls only"), CONFIG)).toBe(false);
-    expect(isCountedVoiceChannel(voiceChannel("v2", "st-tudy", "studying"), CONFIG)).toBe(false);
+    expect(isCountedVoiceChannel(voiceChannel("v2", "st-tudy", "study"), CONFIG)).toBe(true);
+    expect(isCountedVoiceChannel(voiceChannel("v3", "stats", "automatic-stats"), CONFIG)).toBe(
+      false
+    );
+    expect(isCountedVoiceChannel(voiceChannel("v4", "loose", null as never), CONFIG)).toBe(false);
     expect(isCountedVoiceChannel(null, CONFIG)).toBe(false);
   });
 
