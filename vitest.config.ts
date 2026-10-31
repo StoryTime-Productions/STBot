@@ -22,6 +22,7 @@ export default defineConfig({
         // Meaningfully unit-testing it would mean mocking discord.js'
         // Client.login and process signal handling for no real benefit.
         "src/index.ts",
+        "src/backfill.ts",
         "**/*.config.{ts,js,mjs}",
         "**/*.d.ts",
       ],
