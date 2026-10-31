@@ -15,7 +15,18 @@ export interface BotConfig {
    * buttons, /idea and the per-minute tick; unset disables just those. */
   stToolsUrl: string | undefined;
   botApiSecret: string | undefined;
+  /** Discord stats shown on the st-tools dashboard (need the two st-tools values above). Messages
+   * count in this category and its threads; matching by category id includes channels added later. */
+  chatCategoryId: string;
+  /** Voice time counts in this category, minus the guild's AFK channel and the excluded ids. */
+  voiceCategoryId: string;
+  voiceExcludedChannelIds: string[];
+  /** The channel the Wordle app posts its daily streak in; unset matches a channel named st-wordle. */
+  wordleChannelId: string | undefined;
 }
+
+const DEFAULT_CHAT_CATEGORY_ID = "379790880787398677";
+const DEFAULT_VOICE_CATEGORY_ID = "379789398734274563";
 
 const REQUIRED_KEYS = [
   "DISCORD_TOKEN",
@@ -39,5 +50,12 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): BotConfig {
     frownImageUrl: env["FROWN_IMAGE_URL"] || DEFAULT_FROWN_IMAGE_URL,
     stToolsUrl: env["ST_TOOLS_URL"]?.replace(/\/+$/, "") || undefined,
     botApiSecret: env["BOT_API_SECRET"] || undefined,
+    chatCategoryId: env["DISCORD_CHAT_CATEGORY_ID"] || DEFAULT_CHAT_CATEGORY_ID,
+    voiceCategoryId: env["DISCORD_VOICE_CATEGORY_ID"] || DEFAULT_VOICE_CATEGORY_ID,
+    voiceExcludedChannelIds: (env["DISCORD_VOICE_EXCLUDED_CHANNEL_IDS"] ?? "")
+      .split(",")
+      .map((id) => id.trim())
+      .filter(Boolean),
+    wordleChannelId: env["DISCORD_WORDLE_CHANNEL_ID"] || undefined,
   };
 }

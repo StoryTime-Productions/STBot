@@ -19,6 +19,10 @@ describe("loadConfig", () => {
       frownImageUrl: "https://i.imgflip.com/39sjn7.png",
       stToolsUrl: undefined,
       botApiSecret: undefined,
+      chatCategoryId: "379790880787398677",
+      voiceCategoryId: "379789398734274563",
+      voiceExcludedChannelIds: [],
+      wordleChannelId: undefined,
     });
   });
 
@@ -30,6 +34,20 @@ describe("loadConfig", () => {
     });
     expect(config.stToolsUrl).toBe("https://hub.test");
     expect(config.botApiSecret).toBe("s3cret");
+  });
+
+  it("reads the Discord stats categories, excluded voice channels and the Wordle channel", () => {
+    const config = loadConfig({
+      ...validEnv,
+      DISCORD_CHAT_CATEGORY_ID: "chat-1",
+      DISCORD_VOICE_CATEGORY_ID: "voice-1",
+      DISCORD_VOICE_EXCLUDED_CHANNEL_IDS: " a, b ,,c ",
+      DISCORD_WORDLE_CHANNEL_ID: "wordle-1",
+    });
+    expect(config.chatCategoryId).toBe("chat-1");
+    expect(config.voiceCategoryId).toBe("voice-1");
+    expect(config.voiceExcludedChannelIds).toEqual(["a", "b", "c"]);
+    expect(config.wordleChannelId).toBe("wordle-1");
   });
 
   it("leaves the frown-fill feature disabled (no credential) when GOOGLE_SERVICE_ACCOUNT_KEY_PATH is unset", () => {
