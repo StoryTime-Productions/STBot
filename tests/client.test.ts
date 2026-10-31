@@ -11,6 +11,14 @@ describe("createClient", () => {
     expect(intents.has(GatewayIntentBits.GuildMessageReactions)).toBe(true);
   });
 
+  it("listens for voice states, messages and message content for the Discord stats", () => {
+    const intents = createClient().options.intents;
+
+    expect(intents.has(GatewayIntentBits.GuildVoiceStates)).toBe(true);
+    expect(intents.has(GatewayIntentBits.GuildMessages)).toBe(true);
+    expect(intents.has(GatewayIntentBits.MessageContent)).toBe(true);
+  });
+
   it("no longer requests the privileged GuildMembers/GuildPresences intents (game-session logging removed)", () => {
     const client = createClient();
     const intents = client.options.intents;

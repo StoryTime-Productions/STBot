@@ -12,6 +12,10 @@ const config = {
   frownImageUrl: "x",
   stToolsUrl: "https://hub.test",
   botApiSecret: "s3cret",
+  chatCategoryId: "chat",
+  voiceCategoryId: "voice",
+  voiceExcludedChannelIds: [],
+  wordleChannelId: undefined,
 };
 const ID = "123e4567-e89b-12d3-a456-426614174000";
 
