@@ -186,7 +186,7 @@ export function parseWordleStreak(text: string): number | null {
 function isWordleChannel(message: Message, config: Pick<StatsConfig, "wordleChannelId">): boolean {
   const channel = message.channel;
   if (config.wordleChannelId) return channel.id === config.wordleChannelId;
-  return "name" in channel && channel.name === "st-wordle";
+  return "name" in channel && Boolean(channel.name?.includes("st-wordle"));
 }
 
 /** Reads the group streak from the Wordle app's daily post in the wordle channel. */
