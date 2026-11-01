@@ -396,6 +396,11 @@ describe("handleWordleMessage", () => {
     expect(bodyOf(0).streak).toBe(12);
   });
 
+  it("matches the live channel name, which carries an emoji prefix", async () => {
+    await handleWordleMessage(textMessage({ channelName: "✅st-wordle", content: POST }), CONFIG);
+    expect(callStTools).toHaveBeenCalledTimes(1);
+  });
+
   it("uses the configured channel id instead of the name when one is set", async () => {
     const pinned = { ...CONFIG, wordleChannelId: "w1" };
     await handleWordleMessage(textMessage({ channelName: "st-wordle", content: POST }), pinned);
