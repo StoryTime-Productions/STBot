@@ -8,6 +8,7 @@ import { loadConfig } from "./config.js";
 import { db } from "./lib/db.js";
 import { loadCommands, registerCommands } from "./lib/commands.js";
 import { announceTodaysBirthdays } from "./lib/birthdayAnnouncer.js";
+import { syncBirthdaysInBackground } from "./lib/birthdaySync.js";
 import { announcePlaylistUpdates, announceWeeklySummary } from "./lib/playlistAnnouncer.js";
 import { getCurrentWeekSummary, pollPlaylistSheet } from "./lib/playlistTracker.js";
 import { fillMissingEntries } from "./lib/playlistFrownFill.js";
@@ -49,6 +50,8 @@ async function main(): Promise<void> {
           (error: unknown) =>
             logger.error("Birthday announcement job failed", { error: String(error) })
         );
+        // Daily refresh so names and avatars on the dashboard stay current.
+        syncBirthdaysInBackground(readyClient.guilds.cache.get(config.guildId) ?? null, config);
       },
       { timezone: "America/Toronto" }
     );
@@ -102,6 +105,7 @@ async function main(): Promise<void> {
       sendVoiceSnapshot(guild, config).catch((error: unknown) =>
         logger.error("Voice snapshot failed", { error: String(error) })
       );
+      syncBirthdaysInBackground(guild, config);
     }
 
     cron.schedule("0 11 * * *", () => {

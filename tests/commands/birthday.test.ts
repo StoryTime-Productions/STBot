@@ -7,6 +7,10 @@ vi.mock("../../src/lib/birthdays.js", () => ({
   listBirthdays: vi.fn(),
 }));
 
+vi.mock("../../src/lib/birthdaySync.js", () => ({ syncBirthdaysInBackground: vi.fn() }));
+vi.mock("../../src/config.js", () => ({ loadConfig: vi.fn(() => ({ stToolsUrl: "u" })) }));
+
+const { syncBirthdaysInBackground } = await import("../../src/lib/birthdaySync.js");
 const { setBirthday, removeBirthday, listBirthdays } = await import("../../src/lib/birthdays.js");
 const { command } = await import("../../src/commands/birthday.js");
 
@@ -20,6 +24,7 @@ function fakeInteraction(
       getUser: () => options.user ?? { id: "user-1", toString: () => "<@user-1>" },
       getInteger: (name: string) => (name === "month" ? options.month : options.day),
     },
+    guild: { id: "guild-1" },
     reply: vi.fn().mockResolvedValue(undefined),
   } as unknown as ChatInputCommandInteraction;
 }
@@ -39,6 +44,10 @@ describe("birthday command", () => {
       await command.execute(interaction);
 
       expect(setBirthday).toHaveBeenCalledWith("user-1", 7, 10);
+      expect(syncBirthdaysInBackground).toHaveBeenCalledWith(
+        { id: "guild-1" },
+        { stToolsUrl: "u" }
+      );
       expect(interaction.reply).toHaveBeenCalledWith(
         expect.objectContaining({ content: expect.stringContaining("7/10"), ephemeral: true })
       );
@@ -69,12 +78,14 @@ describe("birthday command", () => {
       expect(interaction.reply).toHaveBeenCalledWith(
         expect.objectContaining({ content: expect.stringContaining("Removed") })
       );
+      expect(syncBirthdaysInBackground).toHaveBeenCalledTimes(1);
     });
 
     it("says there was nothing to remove otherwise", async () => {
       vi.mocked(removeBirthday).mockResolvedValueOnce(false);
       const interaction = fakeInteraction("remove");
       await command.execute(interaction);
+      expect(syncBirthdaysInBackground).not.toHaveBeenCalled();
 
       expect(interaction.reply).toHaveBeenCalledWith(
         expect.objectContaining({ content: expect.stringContaining("no stored birthday") })

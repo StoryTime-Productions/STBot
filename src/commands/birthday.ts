@@ -1,5 +1,7 @@
 import { PermissionFlagsBits, SlashCommandBuilder } from "discord.js";
+import { loadConfig } from "../config.js";
 import { listBirthdays, removeBirthday, setBirthday } from "../lib/birthdays.js";
+import { syncBirthdaysInBackground } from "../lib/birthdaySync.js";
 import type { Command } from "../types.js";
 
 const data = new SlashCommandBuilder()
@@ -52,6 +54,7 @@ export const command: Command = {
           content: `Set ${user}'s birthday to ${month}/${day}.`,
           ephemeral: true,
         });
+        syncBirthdaysInBackground(interaction.guild, loadConfig());
       } catch (error) {
         const message = error instanceof RangeError ? error.message : "Failed to set birthday.";
         await interaction.reply({ content: message, ephemeral: true });
@@ -66,6 +69,7 @@ export const command: Command = {
         content: removed ? `Removed ${user}'s birthday.` : `${user} has no stored birthday.`,
         ephemeral: true,
       });
+      if (removed) syncBirthdaysInBackground(interaction.guild, loadConfig());
       return;
     }
 
