@@ -21,7 +21,7 @@ const CONFIG: StatsConfig = {
   botApiSecret: "s3cret",
   chatCategoryId: "chat",
   voiceCategoryIds: ["voice", "study"],
-  voiceExcludedChannelIds: ["gurls"],
+  voiceExcludedChannelIds: ["excluded"],
   wordleChannelId: undefined,
 };
 const OFF: StatsConfig = { ...CONFIG, stToolsUrl: undefined };
@@ -128,7 +128,7 @@ describe("helpers", () => {
   it("counts voice channels in the category, minus AFK and excluded ones", () => {
     expect(isCountedVoiceChannel(voiceChannel("v1", "D&D"), CONFIG)).toBe(true);
     expect(isCountedVoiceChannel(voiceChannel(AFK, "Nap Time"), CONFIG)).toBe(false);
-    expect(isCountedVoiceChannel(voiceChannel("gurls", "gurls only"), CONFIG)).toBe(false);
+    expect(isCountedVoiceChannel(voiceChannel("excluded", "excluded room"), CONFIG)).toBe(false);
     expect(isCountedVoiceChannel(voiceChannel("v2", "st-tudy", "study"), CONFIG)).toBe(true);
     expect(isCountedVoiceChannel(voiceChannel("v3", "stats", "automatic-stats"), CONFIG)).toBe(
       false

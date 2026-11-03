@@ -44,7 +44,7 @@ interface PermissionedChannel {
 }
 
 /**
- * Whether the whole server can see the channel. Private channels (e.g. "gurls only") hide
+ * Whether the whole server can see the channel. Private channels hide
  * themselves from @everyone, so nothing said or spent in them is counted. Fails closed: a
  * channel whose permissions cannot be resolved is treated as private.
  */
