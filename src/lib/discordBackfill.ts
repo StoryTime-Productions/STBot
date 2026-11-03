@@ -25,6 +25,7 @@ interface ApiChannel {
   id: string;
   type: number;
   parent_id?: string | null;
+  permission_overwrites?: Array<{ id: string; allow: string; deny: string }>;
 }
 
 interface ApiThread {
@@ -74,13 +75,25 @@ export async function loadMemberNames(rest: RestLike, guildId: string) {
   return names;
 }
 
-/** Chat channels in the category plus their active and archived public threads. */
+const VIEW_CHANNEL = 1n << 10n;
+
+/** A channel that hides itself from @everyone (the @everyone role id is the guild id). */
+function isPrivate(channel: ApiChannel, guildId: string): boolean {
+  const everyone = channel.permission_overwrites?.find((overwrite) => overwrite.id === guildId);
+  if (!everyone) return false;
+  return (
+    (BigInt(everyone.deny) & VIEW_CHANNEL) !== 0n && (BigInt(everyone.allow) & VIEW_CHANNEL) === 0n
+  );
+}
+
+/** Public chat channels in the category plus their active and archived public threads. */
 export async function listChatContainers(rest: RestLike, guildId: string, chatCategoryId: string) {
   const channels = (await rest.get(Routes.guildChannels(guildId))) as ApiChannel[];
   const chat = channels.filter(
     (channel) =>
       channel.parent_id === chatCategoryId &&
-      (channel.type === TEXT || channel.type === ANNOUNCEMENT)
+      (channel.type === TEXT || channel.type === ANNOUNCEMENT) &&
+      !isPrivate(channel, guildId)
   );
   const ids = new Set(chat.map((channel) => channel.id));
 
