@@ -125,6 +125,29 @@ describe("listChatContainers", () => {
     );
   });
 
+  it("skips channels that hide themselves from @everyone, and their threads", async () => {
+    const hide = { id: GUILD, allow: "0", deny: String(1 << 10) };
+    const { rest } = fakeRest({
+      [`/guilds/${GUILD}/channels`]: () => [
+        { id: "c1", type: 0, parent_id: CHAT },
+        { id: "hidden", type: 0, parent_id: CHAT, permission_overwrites: [hide] },
+        {
+          id: "shown",
+          type: 0,
+          parent_id: CHAT,
+          permission_overwrites: [{ ...hide, allow: String(1 << 10) }],
+        },
+      ],
+      [`/guilds/${GUILD}/threads/active`]: () => ({
+        threads: [{ id: "t-hidden", parent_id: "hidden" }],
+      }),
+      "/channels/c1/threads/archived/public": () => ({ threads: [], has_more: false }),
+      "/channels/shown/threads/archived/public": () => ({ threads: [], has_more: false }),
+    });
+
+    expect((await listChatContainers(rest, GUILD, CHAT)).sort()).toEqual(["c1", "shown"]);
+  });
+
   it("stops paging when a page has no archive timestamp to continue from", async () => {
     const { rest, get } = fakeRest({
       [`/guilds/${GUILD}/channels`]: () => [{ id: "c1", type: 0, parent_id: CHAT }],
