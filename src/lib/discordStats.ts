@@ -1,3 +1,4 @@
+import { ChannelType, PermissionFlagsBits } from "discord.js";
 import type { Guild, GuildMember, Message, VoiceState } from "discord.js";
 import type { BotConfig } from "../config.js";
 import { logger } from "./logger.js";
@@ -37,20 +38,40 @@ function personOf(member: GuildMember): Person {
   };
 }
 
-interface VoiceChannelLike {
+interface PermissionedChannel {
+  guild: { roles: { everyone: unknown } };
+  permissionsFor(role: never): { has(permission: bigint): boolean } | null;
+}
+
+/**
+ * Whether the whole server can see the channel. Private channels (e.g. "gurls only") hide
+ * themselves from @everyone, so nothing said or spent in them is counted. Fails closed: a
+ * channel whose permissions cannot be resolved is treated as private.
+ */
+export function isPublicChannel(channel: PermissionedChannel): boolean {
+  try {
+    const everyone = channel.guild.roles.everyone as never;
+    return channel.permissionsFor(everyone)?.has(PermissionFlagsBits.ViewChannel) === true;
+  } catch {
+    return false;
+  }
+}
+
+interface VoiceChannelLike extends PermissionedChannel {
   id: string;
   name: string;
   parentId: string | null;
-  guild: { afkChannelId: string | null };
+  guild: { afkChannelId: string | null; roles: { everyone: unknown } };
 }
 
-/** A voice channel counts when it is in a counted voice category, is not the AFK channel and is not excluded. */
+/** A voice channel counts when it is public, in a counted voice category, not the AFK channel and not excluded. */
 export function isCountedVoiceChannel(
   channel: VoiceChannelLike | null,
   config: Pick<StatsConfig, "voiceCategoryIds" | "voiceExcludedChannelIds">
 ): boolean {
   if (!channel) return false;
   return (
+    isPublicChannel(channel) &&
     channel.parentId !== null &&
     config.voiceCategoryIds.includes(channel.parentId) &&
     channel.id !== channel.guild.afkChannelId &&
@@ -122,6 +143,10 @@ export class MessageCounter {
     const channel = message.channel;
     const container = channel.isThread() ? channel.parent : channel;
     if (!container || !("parentId" in container) || container.parentId !== config.chatCategoryId) {
+      return;
+    }
+    if (channel.isThread() && channel.type === ChannelType.PrivateThread) return;
+    if (!("permissionsFor" in container) || !isPublicChannel(container as PermissionedChannel)) {
       return;
     }
 

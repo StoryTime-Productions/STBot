@@ -28,8 +28,12 @@ const OFF: StatsConfig = { ...CONFIG, stToolsUrl: undefined };
 
 const AFK = "afk";
 
-function voiceChannel(id: string, name: string, parentId = "voice") {
-  return { id, name, parentId, guild: { afkChannelId: AFK } };
+const EVERYONE = { id: "everyone" };
+const guildOf = () => ({ afkChannelId: AFK, roles: { everyone: EVERYONE } });
+const viewable = (visible: boolean) => () => ({ has: () => visible });
+
+function voiceChannel(id: string, name: string, parentId = "voice", visible = true) {
+  return { id, name, parentId, guild: guildOf(), permissionsFor: viewable(visible) };
 }
 
 function member(id: string, name: string, bot = false) {
@@ -56,19 +60,25 @@ function textMessage(
     at?: Date;
     embeds?: Array<{ title?: string | null; description?: string | null }>;
     noMember?: boolean;
+    private?: boolean;
   } = {}
 ) {
   const container = {
     id: overrides.channelId ?? "c1",
     name: overrides.channelName ?? "st-general",
     parentId: overrides.parentId === undefined ? "chat" : overrides.parentId,
+    guild: guildOf(),
+    permissionsFor: viewable(!overrides.private),
   };
   const thread = overrides.thread;
   const channel = thread
     ? {
         id: "t1",
         isThread: () => true,
-        parent: thread.parentId === null ? null : { parentId: thread.parentId },
+        parent:
+          thread.parentId === null
+            ? null
+            : { parentId: thread.parentId, guild: guildOf(), permissionsFor: viewable(true) },
       }
     : { ...container, isThread: () => false };
   return {
@@ -125,6 +135,28 @@ describe("helpers", () => {
     );
     expect(isCountedVoiceChannel(voiceChannel("v4", "loose", null as never), CONFIG)).toBe(false);
     expect(isCountedVoiceChannel(null, CONFIG)).toBe(false);
+  });
+
+  it("skips private channels that hide themselves from @everyone", () => {
+    const hidden = voiceChannel("v9", "secret room", "voice", false);
+    expect(isCountedVoiceChannel(hidden, CONFIG)).toBe(false);
+    const unresolved = { ...voiceChannel("v10", "odd"), permissionsFor: () => null };
+    expect(isCountedVoiceChannel(unresolved, CONFIG)).toBe(false);
+    const throwing = {
+      ...voiceChannel("v11", "odd"),
+      permissionsFor: () => {
+        throw new Error("no cache");
+      },
+    };
+    expect(isCountedVoiceChannel(throwing, CONFIG)).toBe(false);
+  });
+
+  it("ignores messages in private chat channels", () => {
+    const counter = new MessageCounter();
+    counter.record(textMessage({ private: true }), CONFIG);
+    expect(counter.size).toBe(0);
+    counter.record(textMessage(), CONFIG);
+    expect(counter.size).toBe(1);
   });
 
   it("reads the streak out of the Wordle post", () => {
