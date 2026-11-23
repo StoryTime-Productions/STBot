@@ -14,7 +14,8 @@ vi.mock("../src/lib/playlistSheet.js", () => ({
 
 const { db } = await import("../src/lib/db.js");
 const { parseSheet } = await import("../src/lib/playlistSheet.js");
-const { getCurrentWeekSummary, pollPlaylistSheet } = await import("../src/lib/playlistTracker.js");
+const { getCurrentWeekSummary, markEntriesSeen, pollPlaylistSheet } =
+  await import("../src/lib/playlistTracker.js");
 
 describe("pollPlaylistSheet", () => {
   beforeEach(() => {
@@ -158,5 +159,26 @@ describe("getCurrentWeekSummary", () => {
     const summary = await getCurrentWeekSummary("sheet-1");
 
     expect(summary).toBeUndefined();
+  });
+});
+
+describe("markEntriesSeen", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("stores each listed entry so a later poll sees no change", async () => {
+    await markEntriesSeen({ weekNumber: 21, entries: { Denmar: "Song D", Kiara: "Song K" } });
+
+    expect(db.playlistEntry.upsert).toHaveBeenCalledTimes(2);
+    expect(db.playlistEntry.upsert).toHaveBeenCalledWith({
+      where: { weekNumber_person: { weekNumber: 21, person: "Denmar" } },
+      create: { weekNumber: 21, person: "Denmar", entry: "Song D" },
+      update: { entry: "Song D" },
+    });
+  });
+
+  it("does nothing for a week with no entries", async () => {
+    await markEntriesSeen({ weekNumber: 22, entries: {} });
+
+    expect(db.playlistEntry.upsert).not.toHaveBeenCalled();
   });
 });

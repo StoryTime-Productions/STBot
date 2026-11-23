@@ -77,6 +77,23 @@ export async function pollPlaylistSheet(sheetId: string): Promise<PollResult> {
   return { newEntries, completedWeeks };
 }
 
+/**
+ * Records entries a digest has already shown, so the next poll does not announce the same songs again
+ * as "new". Idempotent: an entry already stored with the same text is rewritten unchanged.
+ */
+export async function markEntriesSeen(week: {
+  weekNumber: number;
+  entries: Record<string, string>;
+}): Promise<void> {
+  for (const [person, entry] of Object.entries(week.entries)) {
+    await db.playlistEntry.upsert({
+      where: { weekNumber_person: { weekNumber: week.weekNumber, person } },
+      create: { weekNumber: week.weekNumber, person, entry },
+      update: { entry },
+    });
+  }
+}
+
 export async function getCurrentWeekSummary(
   sheetId: string
 ): Promise<CurrentWeekSummary | undefined> {

@@ -1,11 +1,19 @@
 import type { Client } from "discord.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { announcePlaylistUpdates, announceWeeklySummary } from "../src/lib/playlistAnnouncer.js";
-import type { CurrentWeekSummary, PollResult } from "../src/lib/playlistTracker.js";
+import {
+  markEntriesSeen,
+  type CurrentWeekSummary,
+  type PollResult,
+} from "../src/lib/playlistTracker.js";
 import { lookupSong } from "../src/lib/musicLookup.js";
 
 vi.mock("../src/lib/musicLookup.js", () => ({
   lookupSong: vi.fn(),
+}));
+
+vi.mock("../src/lib/playlistTracker.js", () => ({
+  markEntriesSeen: vi.fn().mockResolvedValue(undefined),
 }));
 
 function fakeSendableChannel(send: ReturnType<typeof vi.fn>) {
@@ -56,6 +64,28 @@ describe("announcePlaylistUpdates", () => {
     expect(weekCompleteCall.embeds).toHaveLength(1);
   });
 
+  it("does not announce entries one by one for a week whose digest is posted", async () => {
+    const send = vi.fn().mockResolvedValue(undefined);
+    const client = fakeClient(fakeSendableChannel(send));
+    const result: PollResult = {
+      newEntries: [
+        { weekNumber: 1, person: "Alex", entry: "Song A" },
+        { weekNumber: 2, person: "Sam", entry: "Song B" },
+      ],
+      completedWeeks: [
+        { weekNumber: 1, entries: { Alex: "Song A" }, contributorCount: 1, totalPeople: 2 },
+      ],
+    };
+
+    await announcePlaylistUpdates(client, "channel-1", result);
+
+    const contents = send.mock.calls.map((call) => call[0].content as string);
+    expect(contents).toHaveLength(2);
+    expect(contents[0]).toContain("New entry for Week 2");
+    expect(contents[1]).toContain("Week complete!");
+    expect(contents.join("\n")).not.toContain("New entry for Week 1");
+  });
+
   it("logs and skips if the channel isn't sendable", async () => {
     const client = fakeClient(null);
     const result: PollResult = {
@@ -92,6 +122,29 @@ describe("announceWeeklySummary", () => {
     expect(call.content).toContain("12 h left");
     expect(call.embeds).toHaveLength(1);
     expect(call.embeds[0].data.author.name).toBe("Alex");
+  });
+
+  it("marks the listed entries as seen so the next poll does not repeat them", async () => {
+    const client = fakeClient(fakeSendableChannel(vi.fn().mockResolvedValue(undefined)));
+    const week: CurrentWeekSummary = {
+      weekNumber: 21,
+      status: "1 h left",
+      entries: { Denmar: "Song D" },
+      contributorCount: 1,
+      totalPeople: 12,
+    };
+
+    await announceWeeklySummary(client, "channel-1", week);
+
+    expect(markEntriesSeen).toHaveBeenCalledWith(week);
+  });
+
+  it("does not touch the stored entries when there is no current week", async () => {
+    const client = fakeClient(fakeSendableChannel(vi.fn().mockResolvedValue(undefined)));
+
+    await announceWeeklySummary(client, "channel-1", undefined);
+
+    expect(markEntriesSeen).not.toHaveBeenCalled();
   });
 
   it("announces that all weeks are complete when there's no current week", async () => {

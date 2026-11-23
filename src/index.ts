@@ -12,6 +12,7 @@ import { syncBirthdaysInBackground } from "./lib/birthdaySync.js";
 import { announcePlaylistUpdates, announceWeeklySummary } from "./lib/playlistAnnouncer.js";
 import { getCurrentWeekSummary, pollPlaylistSheet } from "./lib/playlistTracker.js";
 import { fillMissingEntries } from "./lib/playlistFrownFill.js";
+import { isWeeklySummaryTick } from "./lib/playlistSchedule.js";
 import { checkInactiveHangouts } from "./lib/hangoutInactivity.js";
 import { handleHangoutPingReaction } from "./lib/hangoutReactions.js";
 import { handleHangoutButton } from "./lib/hangoutButtons.js";
@@ -57,6 +58,10 @@ async function main(): Promise<void> {
     );
 
     cron.schedule("*/30 * * * *", () => {
+      // The weekly summary lists these songs at this exact moment; polling now would repeat them.
+      if (isWeeklySummaryTick(new Date())) {
+        return;
+      }
       pollPlaylistSheet(config.playlistSheetId)
         .then((result) =>
           announcePlaylistUpdates(readyClient, config.announcementsChannelId, result)
