@@ -1,5 +1,5 @@
 import type { Client } from "discord.js";
-import type { CurrentWeekSummary, PollResult } from "./playlistTracker.js";
+import { markEntriesSeen, type CurrentWeekSummary, type PollResult } from "./playlistTracker.js";
 import { sendEmbedsToChannel, sendToChannel } from "./channelSender.js";
 import { lookupSong } from "./musicLookup.js";
 import {
@@ -55,7 +55,12 @@ export async function announcePlaylistUpdates(
   channelId: string,
   result: PollResult
 ): Promise<void> {
+  // A completed week's digest lists every entry, so announcing them one by one as well is noise.
+  const digestWeeks = new Set(result.completedWeeks.map((week) => week.weekNumber));
   for (const entry of result.newEntries) {
+    if (digestWeeks.has(entry.weekNumber)) {
+      continue;
+    }
     await announceEntry(client, channelId, entry.weekNumber, entry.person, entry.entry);
   }
 
@@ -79,4 +84,6 @@ export async function announceWeeklySummary(
   }
 
   await announceWeekDigest(client, channelId, week, "📅 Weekly playlist summary");
+  // The summary just listed these songs, so the next poll must not report them as new.
+  await markEntriesSeen(week);
 }
